@@ -24,12 +24,7 @@ def negative_to_unlabeled(y_train):
 
 
 
-class SatPU:
-    USE_PSEUDO_LABELING             = True
-    USE_NONELINEAR_REWEIGHTING      = True
-    USE_AMBIGUOUS_INITIALIZATION    = True
-    USE_TEMPORAL_FILTER             = True
-    
+class SatPU:    
     
     def __init__(self,
                  regression,
@@ -60,12 +55,12 @@ class SatPU:
 
     def pseudo_label(self,pred,epoch):
         sc = StandardScaler().fit_transform(np.array(pred[:,0]).reshape(-1,1))
-        if SatPU.USE_TEMPORAL_FILTER:
+        if self.USE_TEMPORAL_FILTER:
             from scipy.signal import medfilt
             sc = medfilt(sc.reshape(1,-1)[0],self.filter_window) 
         target = np.array(K.sigmoid(sc.reshape(-1,1)))
         
-        if SatPU.USE_NONELINEAR_REWEIGHTING:
+        if self.USE_NONELINEAR_REWEIGHTING:
             self.label_weights = (pred[:,1]-0.5)**2
             self.label_weights = 16*np.power(self.label_weights,2.0) + 0.0001
             self.label_weights *= len(self.label_weights)/np.sum(self.label_weights)
@@ -93,6 +88,13 @@ class SatPU:
         plt.savefig(join(settings.FIGURE_DIR,settings.TRAINING_PROCESS_SUBFOLDER,"%s.png"%(title)))
         plt.close()
         
+    def save_intermediate(self,pred,file):
+        import pickle
+        with open(file,"wb") as output:
+            pickle.dump(self.label_weights/np.max(self.label_weights), output)
+            pickle.dump(pred[:,0], output)
+            pickle.dump(self.soft_y[:,0], output)
+        
     
     ### save validation result in training process as self.result_valid[epoch,sample]    
     def validate(self,x_valid,epoch_id):
@@ -104,12 +106,11 @@ class SatPU:
         
     def fit(self,train_x,train_y,show = False,x_validate = None):
         
-        
         self.label_weights = np.ones(shape=(train_y.shape[0],))
         self.label_weights = self.label_weights + train_y[:,0]
         self.label_weights *= len(self.label_weights)/self.label_weights.sum()
         
-        if SatPU.USE_AMBIGUOUS_INITIALIZATION:
+        if self.USE_AMBIGUOUS_INITIALIZATION:
             train_y = negative_to_unlabeled(train_y)
         
         if x_validate is None:
@@ -126,13 +127,15 @@ class SatPU:
         for epoch in range(self.SatEpochs):
             y_pred = self.predict(train_x)
             
-            if SatPU.USE_PSEUDO_LABELING:
+            if self.USE_PSEUDO_LABELING:
                 self.pseudo_label(y_pred,epoch) 
             else:
                 self.soft_y = self.soft_y*(self.momentum) + y_pred*(1-self.momentum)
                  
             if show:
                 self.plot(y_pred,"%d"%(epoch))
+                if epoch == 3:
+                    self.save_intermediate(y_pred,join(settings.FIGURE_DIR,"epoch3.pkl"))
                 print ("SatPU epoch %d"%(epoch))
             
             self.regression.fit(train_x,self.soft_y,

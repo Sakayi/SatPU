@@ -5,6 +5,8 @@ Created on Fri Mar 10 17:44:36 2023
 @author: Song Keyu
 """
 import numpy as np
+import settings
+from os.path import join
 
 
 def TrainingPlot(result_mat,y_true,plot=True):
@@ -67,7 +69,9 @@ def TrainingPlot_TF(result_mat,y_true,plot=True):
 
 def GetTestY_TEP(fault_number=1,F_ratio=0.2,t_norm = 10000):
     from TEP_Dataset import LoadDataSet #,ModifyTrainingData
-    x_train,y_train,x_test,y_test = LoadDataSet("../../data/IDV(%d).pkl"%(fault_number))
+    import settings
+    from os.path import join
+    x_train,y_train,x_test,y_test = LoadDataSet(join(settings.TEP_DATA_DIR,"IDV(%d).pkl"%(fault_number)))
     
     # Xt = np.concatenate([x_test[:t_norm,:,:],x_test[-int(t_norm*F_ratio):,:,:]])
     Yt = np.concatenate([y_test[:t_norm,:],y_test[-int(t_norm*F_ratio):,:]])
@@ -80,9 +84,8 @@ def ModelTitle(name = "SelfAT",F_ratio=0.2,P_ratio=0.4,fault_number=1):
     return "%s(%d)[F%d%%P%d%%]"%(name,fault_number,int(F_ratio*100),int(P_ratio*100))
 
 def LoadResults(folder):
-    import os
     import pickle
-    with open(os.path.join(r"../../models/",folder,"validation.pkl"),"rb") as input:
+    with open(join(settings.MODEL_DIR,folder,"validation.pkl"),"rb") as input:
         result = pickle.load(input)
         return result
     return None
@@ -308,3 +311,76 @@ def ModelF1Boxplot(model,dataset,F_ratio,P_ratio_list,Yt,reverse,reps,model_name
     plt.ylim(0,1)
     plt.xlim(F1s.index[0]-10,F1s.index[-1]+10)
     plt.xlabel("u%")
+    
+
+def AblationStudy_0():
+    Yt = GetTestY_TEP(1,0.2)
+    title_list = ["prat_FFFF","Prat_TFFF","pRat_FTFF","prAt_FFTF",
+                  "PRat_TTFF","PrAt_TFTF","pRAt_FTTF","PRAt_TTTF",
+                  "PRAT_TTTT"]
+    import matplotlib.pyplot as plt
+    for name in title_list:
+        results=LoadResults("SatPU_%s(TEP-1)[F20%%P40%%]"%(name))
+        A,P,R,F = TrainingPlot(1-results,Yt[:,0],False)
+        plt.plot(F,label=name[-4:])
+    plt.legend()
+
+def AblationStudy_1():
+    Yt = GetTestY_TEP(1,0.2)
+    title_list = [("baseline","B"),("SatPU_prat_FFFF","S"),
+                  ("SatPU_PRat_TTFF","A1"),("SatPU_PrAt_TFTF","A2"),
+                  ("SatPU_pRAt_FTTF","A3"),("SatPU_PRAt_TTTF","A"),
+                  ("SatPU_PRAT_TTTT","A+")]
+    import matplotlib.pyplot as plt
+    for name,label in title_list:
+        results=LoadResults("%s(TEP-1)[F20%%P40%%]"%(name))
+        A,P,R,F = TrainingPlot(1-results,Yt[:,0],False)
+        plt.plot(F,label=label)
+        print (label)
+        print (F[-1])
+    
+    plt.xlabel("epochs")
+    plt.ylabel("F1 score")
+    plt.title("ablation study")
+    plt.ylim(0.5,1.0)
+    plt.legend()
+    
+def AblationStudy_mean(total_cases=20):
+    Yt = GetTestY_TEP(1,0.2)
+    title_list = [("baseline","B"),("SatPU_prat_FFFF","S"),
+                  ("SatPU_PRat_TTFF","A1"),("SatPU_PrAt_TFTF","A2"),
+                  ("SatPU_pRAt_FTTF","A3"),("SatPU_PRAt_TTTF","A"),
+                  ("SatPU_PRAT_TTTT","A+")]
+    import matplotlib.pyplot as plt
+    for name,label in title_list:
+        F_sum = None
+        for case in range(total_cases):
+            results=LoadResults("%s(TEP-1)[F20%%P40%%]%d"%(name,case+1))
+            A,P,R,F = TrainingPlot(1-results,Yt[:,0],False)
+            F_sum = F if F_sum is None else F_sum+F
+        F_sum = F_sum/total_cases
+        plt.plot(F_sum,label=label)
+        print (label)
+        print (F_sum[-1])
+    
+    # plt.xlabel("epochs")
+    plt.ylabel("F1 score")
+    plt.title("ablation study")
+    plt.ylim(0.5,1.0)
+    plt.legend()
+    
+def LoadInter(file=join(settings.FIGURE_DIR,"epoch3.pkl")):
+    import pickle
+    with open(file,"rb") as input:
+        weights = pickle.load(input)
+        pred = pickle.load(input)
+        label = pickle.load(input)
+        return weights,pred,label
+    
+def ShowInter():
+    w,p,l,= LoadInter()
+    x=np.linspace(0, w.shape[0], w.shape[0],False)
+    import matplotlib.pyplot as plt
+    plt.scatter(x,w,s=1)
+    plt.scatter(x,p,s=1,c='orange')
+    plt.scatter(x,l,s=1,c='green')

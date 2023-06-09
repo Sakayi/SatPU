@@ -36,6 +36,8 @@ def get_params():
     parser.add_argument('--TEMPORAL_FILTER'          , type=int, default=1,choices=[0,1],help="Use TEMPORAL_FILTER step in SatPU")
     
     parser.add_argument('--load_saved',    type=bool,  default=False,  help = 'Load saved training set of TEP dataset (faster)')
+    parser.add_argument('--plot',          type=bool,  default=False,  help = 'show plots')
+    
     
     args = parser.parse_args()
     print(args)
@@ -58,7 +60,7 @@ if __name__ == '__main__':
             ## TODO
             if args.load_saved:
                 print ("Loading existing TEP training package")
-                x_train,y_train,x_test,y_test = LoadDataSet(join(settings.DATA_DIR,"IDV(%d).pkl"%(args.fault_number)))
+                x_train,y_train,x_test,y_test = LoadDataSet(join(settings.TEP_DATA_DIR,"IDV(%d).pkl"%(args.fault_number)))
             else:
                 print ("Creating TEP training set IDV(%d)"%(args.fault_number))
                 x_train,y_train,x_test,y_test=TEP_Windowed_DataSet(
@@ -117,7 +119,7 @@ if __name__ == '__main__':
             Y_TRAIN = Y
         elif args.method == "DeepDCR":
             Y_TRAIN = (Y[:,0]==True)
-        model.fit(X,Y_TRAIN,False,Xt)
+        model.fit(X,Y_TRAIN,args.plot,Xt)
     
         ### Test
         y_pred=model.predict(Xt)

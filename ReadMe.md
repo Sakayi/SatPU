@@ -19,22 +19,6 @@ pip install pyreadr==0.4.7
 # Reproducing results in the paper
 
 ## Download benchmark datasets
-### DAMADICS
-DAMADICS dataset is available online:
-<https://iair.mchtr.pw.edu.pl/Damadics>
-
-Download zip files(4 parts):
-
-<https://iair.mchtr.pw.edu.pl/content/download/163/817/file/Lublin_all_data_part1.zip>
-
-<https://iair.mchtr.pw.edu.pl/content/download/163/817/file/Lublin_all_data_part2.zip>
-
-<https://iair.mchtr.pw.edu.pl/content/download/163/817/file/Lublin_all_data_part3.zip>
-
-<https://iair.mchtr.pw.edu.pl/content/download/163/817/file/Lublin_all_data_part4.zip>
-
-Then extract the txt files to data folder : data\DAMADICS
-
 ### TEP
 The Tennessee Eastman Process(TEP) extended dataset is available online:
 <https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/6C3JR1>
@@ -54,6 +38,24 @@ Transform RData files into pkl files (Necessary step)
 cd source
 python RData-PKL.py
 ```
+
+### DAMADICS
+DAMADICS dataset is available online:
+<https://iair.mchtr.pw.edu.pl/Damadics>
+
+Download zip files(4 parts):
+
+<https://iair.mchtr.pw.edu.pl/content/download/163/817/file/Lublin_all_data_part1.zip>
+
+<https://iair.mchtr.pw.edu.pl/content/download/163/817/file/Lublin_all_data_part2.zip>
+
+<https://iair.mchtr.pw.edu.pl/content/download/163/817/file/Lublin_all_data_part3.zip>
+
+<https://iair.mchtr.pw.edu.pl/content/download/163/817/file/Lublin_all_data_part4.zip>
+
+Then extract the txt files to data folder : data\DAMADICS
+
+
 ## Conduct experiments and save results
 ### TEP IDV-1 
 ```bash
@@ -103,6 +105,11 @@ Or run .bat file:
 call ConductExperiments-DAMADICS.bat
 ```
 
+### DistPU
+Dist-PU runs in pytorch environment, please refer to another git repo:
+
+<https://github.com/Sakayi/Dist-PU>
+
 ### Ablation study
 ```bash
 cd source
@@ -120,4 +127,5 @@ call ConductExperiments-AblationStudy.bat
 
 ## Organize experiment results
 
+See functions and examples in source\utils.py
 <!-- TODO show results -->
